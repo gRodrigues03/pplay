@@ -40,10 +40,8 @@ class Sprite(animation.Animation):
     """Move o Sprite no eixo X (sem input)"""
     def move_x(self, speed):
         self.x += speed
-        self.set_position(self.x, self.y)
 
     """Move o Sprite no eixo Y (sem input)"""
     def move_y(self, speed):
         self.y += speed
-        self.set_position(self.x, self.y)
             

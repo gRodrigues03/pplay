@@ -2,7 +2,7 @@
 
 import pygame
 from pygame.locals import *
-from .point import *
+from . import window, point
 
 # -*- coding: utf-8 -*-
 
@@ -21,7 +21,7 @@ class Mouse():
 
     """Returns the mouse position."""
     def get_position(self):
-        return pygame.mouse.get_pos()
+        return window.Window.mouse_pos
 
     """Defines the mouse's new position."""
     def set_position(self, x, y):
@@ -29,7 +29,7 @@ class Mouse():
 
     """Hides the mouse."""
     def hide(self):
-        pygame.mouse.set_visible(False)
+        #pygame.mouse.set_visible(False)
         self.visibility = False
 
     """Unhides the mouse."""
@@ -59,9 +59,9 @@ class Mouse():
     """Returns a boolean if the mouse is over an area."""
     def is_over_area(self, start_point, end_point):
         mouse_pos = self.get_position()
-        mouse_point = Point(mouse_pos[0], mouse_pos[1])
-        start_point = Point(start_point[0], start_point[1])
-        end_point = Point(end_point[0], end_point[1])
+        mouse_point = point.Point(mouse_pos[0], mouse_pos[1])
+        start_point = point.Point(start_point[0], start_point[1])
+        end_point = point.Point(end_point[0], end_point[1])
         
         if((mouse_point.x < start_point.x) or
            (mouse_point.y < start_point.y) or
@@ -73,9 +73,11 @@ class Mouse():
         
     """Returns if the mouse is over a game_object."""
     def is_over_object(self, game_object):
-        return self.is_over_area([game_object.x, game_object.y],
-                            [game_object.x + game_object.width,
-                             game_object.y + game_object.height])
+        # Takes camera offset by account
+        target = point.Point(game_object.x + window.Window.camera.x, game_object.y + window.Window.camera.y)
+        return self.is_over_area([target.x, target.y],
+                            [target.x + game_object.width,
+                             target.y + game_object.height])
 
     """Returns a boolean if the mouse is over the game screen."""
     def is_on_screen(self):

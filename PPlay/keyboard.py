@@ -27,6 +27,7 @@ class Keyboard():
                 print(event.key)
                 
     def to_pattern(self, key):
+        """
         if((key=="LEFT") or (key=="left")):
             return pygame.K_LEFT
         elif((key=="RIGHT") or (key=="right")):
@@ -47,9 +48,29 @@ class Keyboard():
             return pygame.K_LCTRL
         elif((key=="LEFT_SHIFT") or (key=="left_shift")):
             return pygame.K_LSHIFT
+        elif((key=="RIGHT_SHIFT") or (key=="right_shift")):
+            return pygame.K_RSHIFT
+        elif ((key == "BACKSPACE") or (key == "backspace")):  # Very important addition! Now i can finally write text in-game
+            return pygame.K_BACKSPACE
         elif(((key >= "A") and (key <= "Z")) or
              ((key  >= "a") and (key <= "z"))):
             return getattr(pygame, "K_" + key.lower())
         elif((key >= "0") and (key <= "9")):
             return getattr(pygame, "K_" + key)
-        return key
+        """
+        key = key.upper()
+        if key == "ENTER":
+            return pygame.K_RETURN
+        elif key == "ESC":
+            return pygame.K_ESCAPE
+        elif key == "LEFT_CONTROL":
+            return pygame.K_LCTRL
+        elif key == "LEFT_SHIFT":
+            return pygame.K_LSHIFT
+        elif key == "RIGHT_SHIFT":
+            return pygame.K_RSHIFT
+        elif len(key) == 1 and (key >= "A" and key <= "Z"):
+            #return getattr(pygame, "K_" + key.lower())
+            return pygame.__dict__.get("K_" + key.lower())
+        #return getattr(pygame, "K_"+key)
+        return pygame.__dict__.get("K_" + key)
