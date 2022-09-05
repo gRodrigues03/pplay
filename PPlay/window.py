@@ -1,13 +1,8 @@
-# coding= utf-8
-
 # Pygame and system modules
 import sys
 import pygame
 from pygame.locals import *
-from . import keyboard, mouse, point
-
-# Initializes pygame's modules
-pygame.init()
+from . import keyboard, mouse, point, animation
 
 """A simple Window class, it's the primary Surface(from pygame).
 All the other game's renderable objects will be drawn on it. """
@@ -16,30 +11,31 @@ All the other game's renderable objects will be drawn on it. """
 class Window:
 	# A class attribute in Python, this case is similar to Java statics
 	screen = None
-
+	fake_screen = None
+	screen_distance = point.Point(0, 0)  # The distance between the game screen and real window borders
+	mouse_pos = [0, 0]
+	camera = None
+	actual_camera = None
+	keyboard = keyboard.Keyboard()
+	mouse = mouse.Mouse()
+	deltatime = 0
 	"""Initialize a Window (width x height)"""
 
 	def __init__(self, width, height):
-		# Input controllers
-		Window.keyboard = keyboard.Keyboard()
-		Window.mouse = mouse.Mouse()
-
 		# Size
 		info = pygame.display.Info()  # Gets the monitor resolution
+		pygame.event.set_allowed([QUIT, VIDEORESIZE])
 		self.screen_width = info.current_w  # Saves it, duh
 		self.screen_height = info.current_h
+
 		self.width = width  # Normal, same as before
 		self.height = height
 		# Gets both aspect ratios (maybe there is a better way to do it, but this is the way I found)
 		self.aspect_ratio = self.height / self.width
-		self.inevrted_aspect_ratio = self.width / self.height
 
 		# Window size flags
 		self.fullscreen = False
 		self.resizable = True
-
-		# Pattern color
-		self.color = [0, 0, 0]  # Black
 
 		# Pattern Title
 		self.title = "Title"
@@ -55,39 +51,35 @@ class Window:
 
 		# Now it has 2 screens. one for the game and another for the window
 		# The game screen fits the window maintaining the original self.width and self.height
-		Window.screen = pygame.display.set_mode((self.width, self.height), RESIZABLE)  # Real window
+		Window.screen = pygame.display.set_mode((self.width, self.height))  # Real window
 		Window.fake_screen = Window.screen.copy()  # Game screen
-		Window.screen_new_size = (self.width, self.height)  # Sent to pygame transform when resizing the fake screen
-		Window.screen_distance = 0, 0  # The distance between the game screen and real window borders
+		Window.screen = pygame.display.set_mode((self.width, self.height), RESIZABLE)  # Re-declaration of the real window
 		# Whenever both aspect ratios are different, the game screen is drawn in the middle of the window
-		Window.mouse_pos = [0, 0]
-		# Reinterpreted mouse position.
 		# In short, it doesn't get wacky coordinates from the resized window and only applies to the game screen.
 
 		Window.camera = point.Point(0, 0)
+		Window.actual_camera = point.Point(0, 0)
+
 		# Sets pattern starting conditions
-		self.set_background_color(self.color)
+		self.set_background_color((255, 255, 255))
 		self.set_title(self.title)
 
 		# Updates the entire screen if no arguments are passed
 		# Can be used to update portions of the screen (Rect list)
 		pygame.display.update()
 
-	# ------------------------TODO - VIDEO RESIZE METHODS----------------------
+	# ------------------------VIDEO RESIZE METHODS----------------------
 	"""Not implemented yet - Sets the Window to Fullscreen"""
 
 	# Unfortunately, it must save the old screen (buffer) and
 	# blit (transfer, see pygame doc) to the new FSCREEN
 
 	# Done!, it is a bit slower than usual, but hey, it works
-	# And I've made so it doesn't stretch the aspect ratio
-	# instead, it fits the window size while maintaining the aspect ratio
 	def set_fullscreen(self, value=True):
 		if value:
 			if not self.fullscreen:
 				self.fullscreen = True
-				Window.screen = pygame.display.set_mode((self.screen_width, self.screen_height), FULLSCREEN)
-				self.update_aspect_ratio()
+				self.update_aspect_ratio((self.screen_width, self.screen_height), FULLSCREEN)
 		else:
 			self.restoreScreen()
 
@@ -95,17 +87,15 @@ class Window:
 
 	# Implemented!
 
-	# Yeah.. guess what..
+	# Yeah.. guess what...
 	# I did it lol
 	# It now restores the original size and exits fullscreen
 	def restoreScreen(self):
 		if self.fullscreen:
 			self.fullscreen = False
-			if self.resizable:
-				Window.screen = pygame.display.set_mode((self.width, self.height), RESIZABLE)
-			else:
+			self.update_aspect_ratio((self.width, self.height))
+			if not self.resizable:
 				Window.screen = pygame.display.set_mode((self.width, self.height))
-			self.update_aspect_ratio()
 
 	"""Not implemented yet - Sets the Window resolution"""
 
@@ -115,14 +105,6 @@ class Window:
 	def is_resizable(self):
 		return self.resizable
 
-	# The same problem as fullscreen
-	def set_resolution(self, width, height):
-		pass
-
-	# I don't think that altering the game resolution makes sense, but maybe the altering the upscaled screen does
-
-	# TODO
-
 	# Defines if the window is resizable
 	# updates it and does stuff
 	def set_resizable(self, value=True):
@@ -131,7 +113,7 @@ class Window:
 				self.resizable = True
 				if not self.fullscreen:
 					Window.screen = pygame.display.set_mode((self.width, self.height), RESIZABLE)
-					self.update_aspect_ratio()
+					self.update_aspect_ratio(self.width, self.height)
 		else:
 			self.resizable = False
 			if not self.fullscreen:
@@ -142,43 +124,57 @@ class Window:
 
 	def update(self):
 		# Draw the game screen onto the real window, takes a bit of time, but I think it is worth it...
-		Window.screen.blit(pygame.transform.scale(Window.fake_screen, Window.screen_new_size), Window.screen_distance)
+		pygame.transform.scale(Window.fake_screen, Window.screen.get_rect().size, Window.screen)
 		pygame.display.update()  # refresh
 		for event in pygame.event.get():  # necessary to not get errors
 			if event.type == QUIT:
 				self.close()
 			elif event.type == VIDEORESIZE:
 				if not self.fullscreen and self.resizable:
-					Window.screen = pygame.display.set_mode(event.size, RESIZABLE)
-					self.update_aspect_ratio()  # Updates the game's 'fake screen' size only when necessary
+					self.update_aspect_ratio(event.size)  # Updates the game's 'fake screen' size only when necessary
+		self.update_aspect_ratio_offset()
 		self.update_mouse()  # Updates the mouse cursor coordinates to fit the new game's 'fake screen' size
 		self.last_time = self.curr_time  # set last frame time
 		self.curr_time = pygame.time.get_ticks()  # since pygame.init()
 		self.total_time += (self.curr_time - self.last_time)  # == curr_time
+		animation.Animation.deltatime = self.curr_time - self.last_time
+		Window.deltatime = animation.Animation.deltatime / 1000.0
 
 	# Updates the game's 'fake screen' size and distance from the border
 	# so that it fits the resized window a.k.a. the 'real screen'
-	def update_aspect_ratio(self):
+	def update_aspect_ratio(self, size, mode=RESIZABLE):
 		w, h = Window.screen.get_rect().size
-		if h / w > self.aspect_ratio:
-			Window.screen_new_size = (w, w * self.aspect_ratio)
+		new_as = h/w
+		inverted_new_as = w/h
+		if new_as > self.aspect_ratio:
+			screen_new_size = (self.width, self.width * new_as)
+			Window.screen_distance.x, Window.screen_distance.y = 0, (self.height - screen_new_size[1]) / -2
 		else:
-			Window.screen_new_size = (h * self.inevrted_aspect_ratio, h)
-		Window.screen_distance = (Window.screen_new_size[0] - w) / -2, (Window.screen_new_size[1] - h) / -2
+			screen_new_size = (self.height * inverted_new_as, self.height)
+			Window.screen_distance.x, Window.screen_distance.y = (self.width - screen_new_size[0]) / -2, 0
+		Window.screen = pygame.display.set_mode(screen_new_size)
+		Window.fake_screen = Window.screen.copy()
+		Window.screen = pygame.display.set_mode(size, mode)
+		self.update_aspect_ratio_offset()
+
+	# Updates the distance between the edge of the window and the original aspect_ratio.
+	@classmethod
+	def update_aspect_ratio_offset(cls):
+		cls.actual_camera.x = cls.camera.x + cls.screen_distance.x
+		cls.actual_camera.y = cls.camera.y + cls.screen_distance.y
 
 	# Updates the mouse cursor coordinates to fit the new game's 'fake screen' size
 	# I believe it doesn't break anything
 	# The mouse class now returns window.Window.mouse_pos instead, works fine
 	# It used to update this coordinate everytime the get_position() was used
 	# Now it's only when the window updates
-	def update_mouse(self):
-		Window.mouse_pos = list(pygame.mouse.get_pos())
-		fake_screen_size = Window.fake_screen.get_rect().size
-		real_screen_size = Window.screen.get_rect().size
-		rmax = real_screen_size[0] - Window.screen_distance[0]
-		Window.mouse_pos[0] = ((Window.mouse_pos[0] - Window.screen_distance[0]) / (rmax - Window.screen_distance[0])) * fake_screen_size[0]
-		rmax = real_screen_size[1] - Window.screen_distance[1]
-		Window.mouse_pos[1] = ((Window.mouse_pos[1] - Window.screen_distance[1]) / (rmax - Window.screen_distance[1])) * fake_screen_size[1]
+	@classmethod
+	def update_mouse(cls):
+		cls.mouse_pos = list(pygame.mouse.get_pos())
+		fake_screen_size = cls.fake_screen.get_rect().size
+		real_screen_size = cls.screen.get_rect().size
+		cls.mouse_pos[0] = int((cls.mouse_pos[0] / real_screen_size[0]) * fake_screen_size[0])
+		cls.mouse_pos[1] = int((cls.mouse_pos[1] / real_screen_size[1]) * fake_screen_size[1])
 
 	# curr_time should be the REAL current time, but in Python
 	# the method returns the time in seconds.
@@ -194,8 +190,8 @@ class Window:
 	"""
 	Closes the Window and stops the program - throws an exception
 	"""
-
-	def close(self):
+	@staticmethod
+	def close():
 		pygame.quit()
 		sys.exit()
 
@@ -205,21 +201,16 @@ class Window:
 	Example: set_background_color([0,0,0]) -> black
 	or set_background_color([255,255,255]) -> white
 	"""
-
-	def set_background_color(self, RGB):
-		self.color = RGB
+	@classmethod
+	def set_background_color(cls, RGB):
 		# !CHANGED: now it draws onto the fake screen
-		Window.fake_screen.fill(self.color)
+		cls.fake_screen.fill(RGB)
 
 	# !Implement later possible strings values, such as:
 	# "red","green","blue"..!
 	# Rodrigs: Too many ifs and elses for something that's called every frame and is not
 	# used very often. Maybe values as constants tho? that would come in handy.
-
-	"""Gets the color attribute (background)"""
-
-	def get_background_color(self):
-		return self.color
+	# 02/09/2022: added in constants.py under the color class.
 
 	"""Sets the title of the Window"""
 
@@ -234,18 +225,19 @@ class Window:
 
 	"""Sets the Window icon"""
 	# The icon can be a GameImage, Sprite, path to an image or a pygame surface.
-	def set_icon(self, path):
+	@staticmethod
+	def set_icon(path):
 		if type(path) == str:
 			img = pygame.image.load(path)
 		elif path.__class__.__name__ == 'GameImage' or path.__class__.__name__ == 'Sprite':
 			img = path.image
 		elif path.__class__.__name__ == 'Animation':
-			print('PPlay error: Window.set_icon\nAnimation type object cannot be used as an icon.\nObjeto do tipo Animation não pode ser usado como ícone.')
+			print('PPlay error: Window.set_icon\nAnimation type object cannot be used as an icon.'
+									'\nObjeto do tipo Animation não pode ser usado como ícone.')
 			return
 		else:
 			img = path
 		pygame.display.set_icon(img)
-
 
 	# ----------------------TIME CONTROL METHODS--------------------------
 
@@ -253,7 +245,8 @@ class Window:
 
 	# Uses the processor to make delay accurate instead of
 	# pygame.time.wait that SLEEPS the proccess
-	def delay(self, time_ms):
+	@staticmethod
+	def delay(time_ms):
 		pygame.time.delay(time_ms)
 
 	"""
@@ -261,8 +254,9 @@ class Window:
 	the last and the current frame - SECONDS
 	"""
 
-	def delta_time(self):
-		return (self.curr_time - self.last_time) / 1000.0
+	@classmethod
+	def delta_time(cls):
+		return cls.deltatime
 
 	"""Returns the total time passed since the Window was created"""
 
@@ -271,15 +265,11 @@ class Window:
 
 	# ------------------------DRAW METHODS-------------------------------
 	"""
-	Draw a text on the screen at X and Y co-ords, using [R, G, B] color
-	[with the specified font,
-		   [with the specified size,
-				   [Bold,
-						 [Italic]]]]
+	Draw a text on the screen at X and Y co-ords, using [R, G, B] color,
+	with the specified font,[with the specified size, Bold, Italic
 	"""
-
-	def draw_text(self, text, x, y, size=12, color=(0, 0, 0),
-				  font_name="Arial", bold=False, italic=False):
+	@classmethod
+	def draw_text(cls, text, x, y, size=12, color=(0, 0, 0), font_name="Arial", bold=False, italic=False):
 		# Creates a Font from the system fonts
 		# SysFont(name, size, bold=False, italic=False) -> Font
 		font = pygame.font.SysFont(font_name, size, bold, italic)
@@ -294,7 +284,7 @@ class Window:
 		# Finally! BLIT!
 
 		# !CHANGED: now it draws onto the fake screen
-		Window.fake_screen.blit(font_surface, [x, y])
+		cls.fake_screen.blit(font_surface, (x+Window.actual_camera.x, y+Window.actual_camera.y))
 
 	# ---------------------CLASS METHODS--------------------------
 	"""Returns the drawing surface"""

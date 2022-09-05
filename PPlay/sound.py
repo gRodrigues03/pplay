@@ -1,11 +1,9 @@
-# coding= utf-8
-
 import pygame
 import pygame.mixer
 
-# Initizalizes pygame's modules
-pygame.init()
 """Sound é uma classe de controle dos sons do jogo - efeitos, música"""
+
+
 class Sound:
     """ATENÇÃO! O arquivo passado deve ser .OGG!!! Se não pode gerar problemas."""
     def __init__(self, sound_file, volume=50):
@@ -19,7 +17,8 @@ class Sound:
         if not pygame.mixer:
             pygame.mixer.init(frequency=22050, size=-16, channels=2, buffer=512)
 
-    def load(self, sound_file):
+    @staticmethod
+    def load(sound_file):
         if pygame.mixer:
             return pygame.mixer.Sound(sound_file)
 
@@ -39,16 +38,19 @@ class Sound:
     def decrease_volume(self, value):
         self.set_volume(self.volume - value)
 
-    def is_playing(self):
+    @staticmethod
+    def is_playing():
         if pygame.mixer.get_busy():
             return True
         else:
             return False
 
-    def pause(self):
+    @staticmethod
+    def pause():
         pygame.mixer.pause()
 
-    def unpause(self):
+    @staticmethod
+    def unpause():
         pygame.mixer.unpause()
 
     def play(self):

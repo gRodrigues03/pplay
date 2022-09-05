@@ -1,35 +1,25 @@
-# coding= utf-8
-
 import pygame
-from pygame.locals import *
 from . import window, point
 
-# -*- coding: utf-8 -*-
 
-# Initializes pygame's modules
-pygame.init()
+class Mouse:
 
-class Mouse():
     def __init__(self):
-        self.BUTTON_LEFT = 1
-        self.BUTTON_MIDDLE = 2
-        self.BUTTON_RIGHT = 3
-        self.WHEEL_UP = 4
-        self.WHEEL_DOWN = 5
-        
         self.visibility = True
 
     """Returns the mouse position."""
-    def get_position(self):
+    @staticmethod
+    def get_position():
         return window.Window.mouse_pos
 
     """Defines the mouse's new position."""
-    def set_position(self, x, y):
-        pygame.mouse.set_pos([x,y])
+    @staticmethod
+    def set_position(x, y):
+        pygame.mouse.set_pos([x, y])
 
     """Hides the mouse."""
     def hide(self):
-        #pygame.mouse.set_visible(False)
+        pygame.mouse.set_visible(False)
         self.visibility = False
 
     """Unhides the mouse."""
@@ -49,9 +39,10 @@ class Mouse():
     WHEEL_UP = 4
     WHEEL_DOWN = 5
     """
-    def is_button_pressed(self, button):
+    @staticmethod
+    def is_button_pressed(button):
         pressed_buttons = pygame.mouse.get_pressed()
-        if(pressed_buttons[button-1] == 1):
+        if pressed_buttons[button-1] == 1:
             return True
         else:
             return False            
@@ -74,24 +65,26 @@ class Mouse():
     """Returns if the mouse is over a game_object."""
     def is_over_object(self, game_object):
         # Takes camera offset by account
-        target = point.Point(game_object.x + window.Window.camera.x, game_object.y + window.Window.camera.y)
+        target = point.Point(game_object.x + window.Window.actual_camera.x, game_object.y + window.Window.actual_camera.y)
         return self.is_over_area([target.x, target.y],
-                            [target.x + game_object.width,
-                             target.y + game_object.height])
+                                 [target.x + game_object.width, target.y + game_object.height])
 
     """Returns a boolean if the mouse is over the game screen."""
-    def is_on_screen(self):
+    @staticmethod
+    def is_on_screen():
         return pygame.mouse.get_focused()
 
     """Returns a boolean if the mouse is NOT over the game screen."""
-    def is_off_screen(self):
-        return (not pygame.mouse.get_focused())
+    @staticmethod
+    def is_off_screen():
+        return not pygame.mouse.get_focused()
 
     """
     Returns the amount of mouse relative-movement since
     the previous call to this function.
     """
-    def delta_movement(self):
+    @staticmethod
+    def delta_movement():
         return pygame.mouse.get_rel()
 
     # Mouse drag?
