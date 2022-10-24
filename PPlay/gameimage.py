@@ -22,18 +22,19 @@ class GameImage(gameobject.GameObject):
     Creates a GameImage from the specified file.
     The width and height are obtained based on the image file.
     """
-    def __init__(self, image_file):
+    def __init__(self, image_file=None):
         # Parent constructor must be called first
         gameobject.GameObject.__init__(self)
         
         # Loads image from the source, converts to fast-blitting format
-        if type(image_file) == str:
-            self.image = load_image(image_file)
-        else:
-            self.image = image_file
-        self.rect = self.image.get_rect()
-        self.width = self.rect.width
-        self.height = self.rect.height
+        if image_file is not None:
+            if type(image_file) == str:
+                self.image = load_image(image_file)
+            else:
+                self.image = image_file
+            self.rect = self.image.get_rect()
+            self.width = self.rect.width
+            self.height = self.rect.height
         self.drawable = True
         self.flipped_x = False
         self.flipped_y = False

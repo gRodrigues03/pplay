@@ -2,7 +2,7 @@
 import sys
 import pygame
 from pygame.locals import *
-from . import keyboard, mouse, point, animation
+from . import keyboard, mouse, point
 
 """A simple Window class, it's the primary Surface(from pygame).
 All the other game's renderable objects will be drawn on it. """
@@ -19,6 +19,7 @@ class Window:
 	keyboard = keyboard.Keyboard()
 	mouse = mouse.Mouse()
 	deltatime = 0
+	animation_deltatime = 0
 	"""Initialize a Window (width x height)"""
 
 	def __init__(self, width, height):
@@ -137,8 +138,8 @@ class Window:
 		self.last_time = self.curr_time  # set last frame time
 		self.curr_time = pygame.time.get_ticks()  # since pygame.init()
 		self.total_time += (self.curr_time - self.last_time)  # == curr_time
-		animation.Animation.deltatime = self.curr_time - self.last_time
-		Window.deltatime = animation.Animation.deltatime / 1000.0
+		Window.animation_deltatime = self.curr_time - self.last_time
+		Window.deltatime = Window.animation_deltatime / 1000.0
 
 	# Updates the game's 'fake screen' size and distance from the border
 	# so that it fits the resized window a.k.a. the 'real screen'

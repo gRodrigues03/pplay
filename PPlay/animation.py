@@ -83,7 +83,7 @@ class Animation(gameimage.GameImage):
     """Method responsible for performing the change of frames."""
     def update(self):
         if self.playing:
-            self.curr_time -= Animation.deltatime
+            self.curr_time -= window.Window.animation_deltatime
             if self.curr_time < 0:
                 self.curr_frame += 1
                 self.curr_time = self.frame_duration
