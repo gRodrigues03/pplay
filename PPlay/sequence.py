@@ -3,13 +3,16 @@ from . import gameimage, window, animation
 
 
 def file_path(path):
-    found_extension = False
+    format_start = None
+    extension = None
     for i in range(len(path) - 1, 0, -1):
-        if path[i] == "." and not found_extension:
+        if path[i] == ".":
             extension = ''.join(path[k] for k in range(i, len(path)))
             format_start = i - 1
             break
-
+    if format_start is None:
+        print(f'PPlay error: "{path}" não tem uma extensão')
+        return
     number_length = 0
     while '0' < path[format_start] < '9':
         number_length += 1
@@ -80,10 +83,9 @@ class ImageSequence(animation.Animation):
 
     def set_image(self, image):
         if type(image) == str:
-            self.image = gameimage.load_image(image)
+            self.create_image_sequence(image)
         else:
             self.image = image
-        self.create_image_sequence()
 
     """Flips the animation both horizontally and vertically at will."""
     """The whole sheet is inverted so that the image doesn't need to be flipped in every draw call."""

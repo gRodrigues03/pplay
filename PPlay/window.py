@@ -144,7 +144,7 @@ class Window:
 	# Updates the game's 'fake screen' size and distance from the border
 	# so that it fits the resized window a.k.a. the 'real screen'
 	def update_aspect_ratio(self, size, mode=RESIZABLE):
-		w, h = Window.screen.get_rect().size
+		w, h = size
 		new_as = h/w
 		inverted_new_as = w/h
 		if new_as > self.aspect_ratio:
